@@ -12,11 +12,6 @@ def build_executable():
         "--name=LDTPapp",
         "--windowed",
         "--icon=assets/LDPTapp_icon.ico",
-        "--hidden-import=numpy",
-        "--hidden-import=numpy.core._dtype_ctypes",
-        "--hidden-import=numpy.random.common",
-        "--hidden-import=numpy.random.bounded_integers",
-        "--hidden-import=numpy.random.entropy",
         "--add-data", "config.ini;.",
         "main.py"
     ])

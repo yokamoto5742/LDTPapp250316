@@ -69,18 +69,6 @@ def build_executable():
         "--add-data", "config.ini;.",
     ]
 
-    # DLLファイルを個別に追加
-    for dll in pandas_dlls:
-        relative_path = os.path.relpath(os.path.dirname(dll),
-                                        os.path.join(venv_path, "Lib", "site-packages"))
-        pyinstaller_options.extend(["--add-binary", f"{dll};{relative_path}"])
-
-    for dll in numpy_dlls:
-        relative_path = os.path.relpath(os.path.dirname(dll),
-                                        os.path.join(venv_path, "Lib", "site-packages"))
-        pyinstaller_options.extend(["--add-binary", f"{dll};{relative_path}"])
-
-    # 残りのオプションを追加
     pyinstaller_options.extend([
         "--hidden-import", "pandas._libs.aggregations",
         "--hidden-import", "pandas._libs.window.aggregations",
@@ -88,39 +76,28 @@ def build_executable():
         "--hidden-import", "pandas._libs.groupby",
         "--hidden-import", "numpy",
         "--hidden-import", "scipy",
-        "--collect-all", "pandas",
-        "--collect-all", "numpy",
         "--clean",
-        "--log-level", "DEBUG",
         "--noconfirm",
         "main.py"
     ])
 
     try:
-        # PyInstallerを実行（text=Falseに変更し、encoding引数を削除）
-        print("Running PyInstaller with options:", " ".join(pyinstaller_options))
-        result = subprocess.run(
-            pyinstaller_options,
-            check=True,
-            capture_output=True,
-            text=False  # バイナリモードで出力を取得
-        )
+        # バッチファイルで実行
+        batch_file = "build_app.bat"
+        with open(batch_file, "w", encoding="utf-8") as f:
+            f.write(" ".join(pyinstaller_options))
 
-        print(f"Executable built successfully. Version: {new_version}")
-        print("Build output:")
-        # バイナリ出力をデコードする際にエラーを無視
-        try:
-            print(result.stdout.decode('utf-8', errors='ignore'))
-        except Exception as e:
-            print(f"出力の表示中にエラーが発生しました: {e}")
+        print(f"バッチファイル {batch_file} を作成しました")
+        print(f"コマンド: {' '.join(pyinstaller_options)}")
 
-    except subprocess.CalledProcessError as e:
-        print(f"Error building executable: {e}")
-        print("Build error output:")
-        try:
-            print(e.stderr.decode('utf-8', errors='ignore'))
-        except Exception as decode_err:
-            print(f"エラー出力のデコード中にエラーが発生しました: {decode_err}")
+        # バッチファイルを実行
+        print("バッチファイルを実行します...")
+        os.system(batch_file)
+
+        print(f"Executable build process completed. Version: {new_version}")
+
+    except Exception as e:
+        print(f"Error during build process: {e}")
         raise
 
 
