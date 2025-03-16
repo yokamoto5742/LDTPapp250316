@@ -97,23 +97,30 @@ def build_executable():
     ])
 
     try:
-        # PyInstallerを実行
+        # PyInstallerを実行（text=Falseに変更し、encoding引数を削除）
         print("Running PyInstaller with options:", " ".join(pyinstaller_options))
         result = subprocess.run(
             pyinstaller_options,
             check=True,
             capture_output=True,
-            text=True
+            text=False  # バイナリモードで出力を取得
         )
 
         print(f"Executable built successfully. Version: {new_version}")
         print("Build output:")
-        print(result.stdout)
+        # バイナリ出力をデコードする際にエラーを無視
+        try:
+            print(result.stdout.decode('utf-8', errors='ignore'))
+        except Exception as e:
+            print(f"出力の表示中にエラーが発生しました: {e}")
 
     except subprocess.CalledProcessError as e:
         print(f"Error building executable: {e}")
         print("Build error output:")
-        print(e.stderr)
+        try:
+            print(e.stderr.decode('utf-8', errors='ignore'))
+        except Exception as decode_err:
+            print(f"エラー出力のデコード中にエラーが発生しました: {decode_err}")
         raise
 
 
