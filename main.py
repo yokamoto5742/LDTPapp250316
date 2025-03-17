@@ -25,7 +25,7 @@ from io import BytesIO
 from version import VERSION, LAST_UPDATED
 
 
-# 実行ファイルかどうかを確認し本番環境（実行形式ファイル）の場合はディレクトリを変更
+
 if getattr(sys, 'frozen', False):
     app_directory = r"C:\Shinseikai\LDTPapp"
     os.chdir(app_directory)
@@ -289,6 +289,7 @@ class TreatmentPlanGenerator:
         wb.active = ws_plan
 
         wb.save(file_path)
+        time.sleep(0.5)  # 0.5秒待機
         os.startfile(file_path)
 
     @staticmethod
