@@ -25,13 +25,12 @@ from barcode.codex import Code128
 from barcode.writer import ImageWriter
 from io import BytesIO
 
+import config_manager
 from version import VERSION, LAST_UPDATED
 
 
 
-if getattr(sys, 'frozen', False):
-    app_directory = r"C:\Shinseikai\LDTPapp"
-    os.chdir(app_directory)
+
 
 # config.iniファイルの読み込み
 config = configparser.ConfigParser()
@@ -396,8 +395,7 @@ def check_file_exists(page):
 def load_patient_data():
     global csv_file_path
     try:
-        config_csv = configparser.ConfigParser()
-        config_csv.read('config.ini')
+        config_csv = config_manager.load_config()
         csv_file_path = config_csv.get('FilePaths', 'patient_data')
 
         date_columns = [0, 6]  # 0列目と6列目を日付として読み込む

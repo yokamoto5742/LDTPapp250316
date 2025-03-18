@@ -13,6 +13,7 @@ def build_executable():
         "--name=LDTPapp",
         "--windowed",
         "--icon=assets/LDPTapp_icon.ico",
+        "--add-data", "config.ini;.",
         "main.py"
     ])
 
