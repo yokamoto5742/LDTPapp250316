@@ -6,6 +6,10 @@ from watchdog.events import FileSystemEventHandler
 from datetime import datetime
 import csv
 import time
+import threading
+import psutil
+import win32com.client
+import pythoncom
 
 import flet as ft
 from flet import View
@@ -17,8 +21,6 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 import configparser
 from contextlib import contextmanager
-import threading
-
 from barcode.codex import Code128
 from barcode.writer import ImageWriter
 from io import BytesIO
@@ -222,6 +224,28 @@ def create_form_fields(dropdown_items):
             daily_activity, target_achievement, diet1, diet2, diet3, diet4)
 
 
+def close_excel_if_needed(target_path):
+    """特定のExcelファイルが開いているか確認し、必要なら閉じる"""
+    target_path = os.path.abspath(target_path).lower()
+
+    try:
+        # COMオブジェクトの初期化
+        pythoncom.CoInitialize()
+        excel = win32com.client.GetObject('Excel.Application')
+
+        # 開いているワークブックをチェック
+        for wb in excel.Workbooks:
+            if os.path.abspath(wb.FullName).lower() == target_path:
+                wb.Close(SaveChanges=False)
+                time.sleep(0.1)
+                break
+
+    except:
+        pass
+    finally:
+        pythoncom.CoUninitialize()
+
+
 class TreatmentPlanGenerator:
     @staticmethod
     def generate_plan(patient_info, file_name):
@@ -238,10 +262,7 @@ class TreatmentPlanGenerator:
         workbook = load_workbook(template_path, keep_vba=True)
         common_sheet = workbook["共通情報"]
 
-        # バーコードを両方のシートに追加するために、両方のシートを取得
-        initial_sheet = workbook["初回用"]
-        continuous_sheet = workbook["継続用"]
-
+        # 共通情報シートにデータを設定
         TreatmentPlanGenerator.populate_common_sheet(common_sheet, patient_info)
 
         # バーコード生成の共通設定
@@ -256,41 +277,48 @@ class TreatmentPlanGenerator:
         issue_date = patient_info.issue_date.strftime("%Y%m%d")
         barcode_data = f"{patient_id}{document_number}{department_id}{doctor_id}{issue_date}{current_time}"
 
-        # バーコードを両方のシートに追加する関数
+        # バッファオブジェクト参照を保持（後で閉じるため）
+        buffers = []
+
         def add_barcode_to_sheet(sheet):
             barcode = Code128(barcode_data, writer=ImageWriter())
             buffer = BytesIO()
             barcode.write(buffer, options=options)
+            buffer.seek(0)  # 重要: ポインタを先頭に戻す
             img = Image(buffer)
             img.width = barcode_config.getint('image_width', 200)
             img.height = barcode_config.getint('image_height', 30)
             image_position = barcode_config.get('image_position', 'B2')
             sheet.add_image(img, image_position)
+            buffers.append(buffer)
 
         # 両方のシートにバーコードを追加
+        initial_sheet = workbook["初回用"]
+        continuous_sheet = workbook["継続用"]
         add_barcode_to_sheet(initial_sheet)
         add_barcode_to_sheet(continuous_sheet)
 
-        workbook.save(file_path)
-
-        wb = load_workbook(file_path, read_only=False, keep_vba=True)
-        ws_common = wb["共通情報"]
-        ws_common.sheet_view.tabSelected = False
-
-        # 全てのシートの選択状態をリセット
-        for sheet in wb.worksheets:
+        # すべてのシートの選択状態をリセット
+        for sheet in workbook.worksheets:
             sheet.sheet_view.tabSelected = False
 
-        # 適切なシートをアクティブにし、選択状態にする
+        # 適切なシートをアクティブにする
         if patient_info.creation_count == 1:
-            ws_plan = wb["初回用"]
+            ws_plan = workbook["初回用"]
         else:
-            ws_plan = wb["継続用"]
+            ws_plan = workbook["継続用"]
         ws_plan.sheet_view.tabSelected = True
-        wb.active = ws_plan
+        workbook.active = ws_plan
 
-        wb.save(file_path)
-        time.sleep(0.5)  # 0.5秒待機
+        # ファイルを保存
+        workbook.save(file_path)
+
+        # ファイル保存後にバッファを閉じる
+        for buffer in buffers:
+            buffer.close()
+
+        # Excelファイルを開く
+        time.sleep(0.1)
         os.startfile(file_path)
 
     @staticmethod
