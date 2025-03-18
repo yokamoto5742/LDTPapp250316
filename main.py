@@ -29,12 +29,7 @@ import config_manager
 from version import VERSION, LAST_UPDATED
 
 
-
-
-
-# config.iniファイルの読み込み
-config = configparser.ConfigParser()
-config.read('config.ini', encoding='utf-8')
+config = config_manager.load_config()
 input_height = config.getint('UI', 'input_height', fallback=50)
 text_height = config.getint('UI', 'text_height', fallback=40)
 db_url = config.get('Database', 'db_url')
