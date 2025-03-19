@@ -26,13 +26,14 @@ markdown-it-py==3.0.0
 MarkupSafe==3.0.2
 mdurl==0.1.2
 mysqlclient==2.2.7
-numpy==2.1.0
+numpy==1.24.4
 oauthlib==3.2.2
 openpyxl==3.1.5
 packaging==23.2
-pandas==2.2.2
+pandas==2.0.3
 pefile==2023.2.7
 pillow==11.1.0
+psutil==7.0.0
 pydantic==2.10.6
 pydantic_core==2.27.2
 Pygments==2.19.1
@@ -44,6 +45,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-slugify==8.0.4
 pytz==2025.1
+pywin32==310
 pywin32-ctypes==0.2.3
 PyYAML==6.0.2
 qrcode==7.4.2
